@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+	<head>
+
+		<title>Email - iBacor</title>
+		
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+		<!-- CSS font-awesome -->
+		<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
+		<!-- CSS bootstrap -->
+		<link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" />
+		<!-- CSS select2 -->
+		<link type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" />
+		<!-- CSS DEMO -->
+		<style>
+		body {
+			background: #f5f5f5
+		}
+		.main {
+			background: #fff;
+			padding-bottom: 20px
+		}
+		.select2-container--default .select2-selection--multiple {
+			border: 1px solid #ccc
+		}
+		#message {
+			height: 200px
+		}
+		#result,
+		#log {
+			display: block;
+			margin-bottom: 20px;
+			background: #111;
+			color: #fff;
+			padding: 10px;
+			height: 400px;
+			overflow: auto
+		}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-8 col-md-offset-2 main">
+					<h1 align="center">New Message</h1>
+					<div class="form-group">
+						<label>To:</label>
+						<select class="form-control select2" name="to[]" multiple="">
+							<option value="bachor.can@gmail.com">bachor.can@gmail.com</option>
+							<option value="bachor.can@gmail.com">me@ibacor.com</option>
+							<option value="bachor.can@gmail.com">bachor.can@facebook.com</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Cc:</label>
+						<select class="form-control select2" name="cc[]" multiple="">
+							<option value="bachor.can@gmail.com">bachor.can@gmail.com</option>
+							<option value="bachor.can@gmail.com">me@ibacor.com</option>
+							<option value="bachor.can@gmail.com">bachor.can@facebook.com</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Bcc:</label>
+						<select class="form-control select2" name="bcc[]" multiple="">
+							<option value="bachor.can@gmail.com">bachor.can@gmail.com</option>
+							<option value="bachor.can@gmail.com">me@ibacor.com</option>
+							<option value="bachor.can@gmail.com">bachor.can@facebook.com</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Subject:</label>
+						<input type="text" class="form-control" name="subject" placeholder="Hello">
+					</div>
+					<div class="form-group">
+						<label>Compose:</label>
+						<label class="radio-inline"><input type="radio" name="compose" value="html" checked>HTML</label>
+						<label class="radio-inline"><input type="radio" name="compose" value="text">Plain text</label>
+						<textarea class="form-control" name="message" id="message"></textarea>
+					</div>
+					<button type="submit" class="btn btn-primary" id="send"><i class="fa fa-paper-plane"></i> Send</button> 
+					<a href="https://github.com/bachors/PHP-sending-emails-to-multiple-recipients" class="btn btn-warning" style="float: right"><i class="fa fa-code"></i> Source</a>
+					<hr>
+					<div class="col-md-6">
+						<label>Data:</label>
+						<textarea id="result" class="form-control"></textarea>
+					</div>
+					<div class="col-md-6">
+						<label>Log:</label>
+						<textarea id="log" class="form-control"></textarea>
+					</div>
+				</div>
+			</div>
+			<p align="center">iBacor.com</p>
+		</div>
+
+		<!-- jQuery -->
+		<script src="//code.jquery.com/jquery-2.1.3.min.js"></script>
+		<!-- select2 -->
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+		<!-- tinymce -->
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tinymce/4.5.2/tinymce.min.js"></script>
+		<script>
+		var data = new Object();
+
+		$( document ).ready(function() {
+			
+			HTMLmessage();
+			
+			$(".select2").select2({
+				tags: true,
+				placeholder: "he@host.com, she@host.com"
+			});
+
+			$("#send").click(function(){
+				$("#log").val('');
+				var message = ($("input[name='compose']:checked").val() == 'html' ? tinyMCE.activeEditor.getContent() : $("#message").val())
+				if ($("[name='to[]']").val() != null && $("[name='subject']").val() != '' && message != '') {
+					data = {
+						'status': 'success',
+						'to': $("[name='to[]']").val(),
+						'cc': ($("[name='cc[]']").val() == null ? '' : $("[name='cc[]']").val().join()),
+						'bcc': ($("[name='bcc[]']").val() == null ? '' : $("[name='bcc[]']").val().join()),
+						'subject': $("[name='subject']").val(),
+						'type': $("input[name='compose']:checked").val(),
+						'compose': ($("input[name='compose']:checked").val() == 'html' ? '<html><body>' + message + '</body></html>' : message)
+					};
+				} else {
+					data = {
+						'status': 'error',
+						'message': 'Failed: Form input not empty.'
+					};
+				}				
+				// Result: data
+				$("#result").val(JSON.stringify(data, null, 2));
+				// Send
+				sendRequest(data);
+				return false;
+			});
+			
+			$("input[name='compose']").change(function() {
+				var c = $(this).val();
+				if(c == 'html'){
+					HTMLmessage();
+				}else {
+					tinymce.remove('#message');
+				}
+				return false;
+			});
+
+		});
+		
+		function HTMLmessage() {
+			tinymce.init({
+				selector: '#message',
+				height: 200,
+				theme: 'modern',
+				plugins: [
+					'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+					'searchreplace wordcount visualblocks visualchars code fullscreen',
+					'insertdatetime media nonbreaking save table contextmenu directionality',
+					'emoticons template paste textcolor colorpicker textpattern imagetools codesample toc'
+				],
+				toolbar1: 'undo redo | insert | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
+				toolbar2: 'print preview media | forecolor backcolor emoticons | codesample',
+				image_advtab: true,
+				templates: [
+					{ title: 'Test template 1', content: 'Test 1' },
+					{ title: 'Test template 2', content: 'Test 2' }
+				],
+				content_css: [
+					'//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
+					'//www.tinymce.com/css/codepen.min.css'
+				]
+			});
+		}
+
+		// Looping request send email to server with ajax (client side)
+		function sendRequest(data) {
+			if(data.status == 'success'){
+				var ajaxRequest = new XMLHttpRequest(),
+					i = 0;
+				ajaxRequest.onreadystatechange = function() {
+					if (ajaxRequest.readyState == 4) {
+						document.getElementById('log').value += ajaxRequest.responseText + '\n';
+						i++;
+						if(i < data.to.length) {
+							ajaxRequest.open("POST", "send.php", true);
+							ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+							ajaxRequest.send("to=" + data.to[i] + "&cc=" + data.cc + "&bcc=" + data.bcc + "&subject=" + data.subject + "&type=" + data.type + "&compose=" + data.compose);
+						}
+					}
+				};
+				ajaxRequest.open("POST", "send.php", true);
+				ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				ajaxRequest.send("to=" + data.to[i] + "&cc=" + data.cc + "&bcc=" + data.bcc + "&subject=" + data.subject + "&type=" + data.type + "&compose=" + data.compose);
+			}
+		}
+		</script>
+	</body>
+</html>
